@@ -76,6 +76,17 @@ public class GlobalExceptionHandler {
                 .body(buildError("MISSING_PARAMETER", ex.getMessage(), request));
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingPart(
+            org.springframework.web.multipart.support.MissingServletRequestPartException ex,
+            HttpServletRequest request) {
+
+        log.warn("Missing multipart part | path={} | part={}", request.getRequestURI(), ex.getRequestPartName());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(buildError("MISSING_FILE_PART", "Required multipart field '" + ex.getRequestPartName() + "' is not present", request));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableBody(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
