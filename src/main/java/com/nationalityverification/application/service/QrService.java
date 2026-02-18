@@ -5,10 +5,9 @@ import com.google.zxing.EncodeHintType;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.nationalityverification.application.port.in.GenerateQrUseCase;
 import com.nationalityverification.common.exception.NationalityVerificationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -18,17 +17,20 @@ import java.util.Map;
 /**
  * Generates QR code PNG images using ZXing.
  */
+@Slf4j
 @Service
-public class QrService implements GenerateQrUseCase {
+public class QrService {
 
-    private static final Logger log = LoggerFactory.getLogger(QrService.class);
+    private static final int QR_SIZE = 300;
 
-    private static final String QR_BASE_URL = "https://demoqr.upsonic.ai/demo/qr/?sessionId=";
-    private static final int    QR_SIZE     = 300;
+    private final String qrBaseUrl;
 
-    @Override
+    public QrService(@Value("${qr.base-url:https://demoqr.upsonic.ai/demo/qr/}") String qrBaseUrl) {
+        this.qrBaseUrl = qrBaseUrl;
+    }
+
     public byte[] generateQr(String sessionId) {
-        String content = QR_BASE_URL + sessionId;
+        String content = qrBaseUrl + sessionId;
         log.debug("Generating QR for sessionId=[{}]", sessionId);
 
         try {

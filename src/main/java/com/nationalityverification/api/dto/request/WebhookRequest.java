@@ -5,11 +5,21 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Inbound DTO for the Upsonic identity-analysis webhook.
  * {@code tckn} may arrive as either a JSON number or a JSON string.
+ *
+ * <p>Jackson requires a no-args constructor + setters for binding;
+ * {@code @NoArgsConstructor} and {@code @Setter} satisfy that requirement.
+ * {@code @Getter} replaces the hand-written accessors.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public class WebhookRequest {
 
     @JsonDeserialize(using = TcknDeserializer.class)
@@ -21,10 +31,4 @@ public class WebhookRequest {
     @NotNull(message = "analyzed_data is required")
     @Valid
     private AnalyzedDataDto analyzedData;
-
-    // Jackson needs the setter; TCKN arrives as a JSON number so a custom deserialiser is used.
-    public String getTckn()                       { return tckn; }
-    public void   setTckn(String tckn)            { this.tckn = tckn; }
-    public AnalyzedDataDto getAnalyzedData()       { return analyzedData; }
-    public void   setAnalyzedData(AnalyzedDataDto d) { this.analyzedData = d; }
 }

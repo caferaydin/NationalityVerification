@@ -1,9 +1,9 @@
 package com.nationalityverification.api.controller;
 
-import com.nationalityverification.application.port.in.GenerateQrUseCase;
+import com.nationalityverification.application.service.QrService;
 import jakarta.validation.constraints.NotBlank;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -13,18 +13,14 @@ import org.springframework.web.bind.annotation.*;
  * Thin controller for QR code generation.
  * Delegates all business logic to {@link GenerateQrUseCase}.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1")
 @Validated
+@RequiredArgsConstructor
 public class QrController {
 
-    private static final Logger log = LoggerFactory.getLogger(QrController.class);
-
-    private final GenerateQrUseCase generateQrUseCase;
-
-    public QrController(GenerateQrUseCase generateQrUseCase) {
-        this.generateQrUseCase = generateQrUseCase;
-    }
+    private final QrService generateQrUseCase;
 
     /**
      * GET /api/v1/qr?sessionId=...

@@ -1,11 +1,22 @@
 package com.nationalityverification.api.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Nested DTO inside {@link WebhookRequest} carrying the Upsonic analysis result.
+ *
+ * <p>Jackson requires a no-args constructor + setters for binding.
+ * Lombok's {@code @Getter}/{@code @Setter}/{@code @NoArgsConstructor} provide all three.
  */
+@Getter
+@Setter
+@NoArgsConstructor
 public class AnalyzedDataDto {
 
     @JsonProperty("verification_status")
@@ -19,11 +30,4 @@ public class AnalyzedDataDto {
     @JsonProperty("verification_description")
     @Size(max = 1024, message = "verification_description must not exceed 1024 characters")
     private String verificationDescription;
-
-    public boolean isVerificationStatus()            { return verificationStatus; }
-    public void    setVerificationStatus(boolean s)  { this.verificationStatus = s; }
-    public double  getVerificationScore()            { return verificationScore; }
-    public void    setVerificationScore(double s)    { this.verificationScore = s; }
-    public String  getVerificationDescription()      { return verificationDescription; }
-    public void    setVerificationDescription(String d) { this.verificationDescription = d; }
 }

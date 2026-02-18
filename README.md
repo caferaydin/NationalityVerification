@@ -1,189 +1,151 @@
 # Nationality Verification Service
 
-Enterprise-grade Spring Boot 3.x / Java 17 service for identity verification via Upsonic integration.
+Spring Boot 3.x / Java 17 PoC — kimlik doğrulama ve fotoğraf yükleme servisi.
 
-## Architecture
+## Paket Yapısı
 
 ```
 com.nationalityverification
-├── api                     # Controllers + DTOs (thin controllers only)
-│   ├── advice              # GlobalExceptionHandler (@ControllerAdvice)
+├── api
+│   ├── advice              # GlobalExceptionHandler
 │   ├── controller          # QrController, WebhookController, IdentityImageController
 │   └── dto
-│       ├── request         # WebhookRequest, AnalyzedDataDto
-│       └── response        # ImageUploadResponse, ErrorResponse
-├── application             # Use-case interfaces + service implementations
-│   ├── port.in             # GenerateQrUseCase, ProcessWebhookUseCase, UploadIdentityImageUseCase
+│       ├── request         # WebhookRequest, AnalyzedDataDto, TcknDeserializer
+│       └── response        # PhotoUploadResponse, ErrorResponse
+├── application
 │   └── service             # QrService, WebhookService, IdentityImageService
-├── domain                  # Pure domain model (no framework dependencies)
-│   ├── enums               # ImageType, VerificationStatus
-│   └── model               # IdentityImage, IdentityVerificationResult
-├── infrastructure          # Adapters for storage and persistence
-│   ├── persistence         # Repository interfaces + in-memory implementations
-│   └── storage             # StoragePort interface + LocalFileStorageAdapter
-├── security                # HMAC validation, request body caching
-│   ├── WebhookHmacValidator
-│   └── CachedBodyRequestWrapper
-└── common                  # Cross-cutting concerns
-    ├── correlation         # CorrelationIdFilter (MDC + response header)
-    ├── exception           # Domain exceptions hierarchy
-    └── logging             # LoggingUtils (TCKN → HMAC for safe logging)
+├── infrastructure
+│   └── storage             # LocalFileStorageAdapter
+└── common
+    ├── correlation         # CorrelationIdFilter
+    ├── exception           # NationalityVerificationException, FileStorageException
+    └── logging             # LoggingUtils
 ```
 
-## Prerequisites
-
-- Java 17+
-- Maven Wrapper (`mvnw`) bundled in repo
-
-## Running
+## Çalıştırma
 
 ```bash
-# Set the webhook HMAC secret (or use the default "change-me-in-production" for dev)
-$env:UPS_WEBHOOK_SECRET = "my-super-secret"
-
 .\mvnw spring-boot:run
 ```
 
-Server starts on port **8080**.
+Port: **8080**
 
 ---
 
-## Endpoints
+## Endpoint'ler
 
-### 1 — QR Code Generation
+### 1 — QR Kodu
 
 ```
 GET /api/v1/qr?sessionId={sessionId}
 ```
 
-Returns a PNG image (300×300px) whose content is:
-`https://demoqr.upsonic.ai/demo/qr/?sessionId={sessionId}`
+PNG döner, içeriği: `https://demoqr.upsonic.ai/demo/qr/{sessionId}`
 
-**curl example:**
 ```bash
 curl -o qr.png "http://localhost:8080/api/v1/qr?sessionId=abc-123"
 ```
 
 ---
 
-### 2 — Upsonic Identity-Analysis Webhook
+### 2 — Kimlik Kartı Analizi
 
 ```
-POST /api/v1/webhooks/identity-analysis
+POST /api/v1/kimlik_kart_analizi
 Content-Type: application/json
-X-Signature: <hex(HMAC-SHA256(secret, timestamp + "." + rawBody))>
-X-Timestamp: <unix-epoch-seconds>
 ```
 
-**Request body:**
 ```json
 {
   "tckn": 11111111111,
   "analyzed_data": {
     "verification_status": true,
     "verification_score": 0.95,
-    "verification_description": "Identity verified successfully"
+    "verification_description": "Identity verified"
   }
 }
 ```
 
-**Response:** `200 OK` (empty body)
+**Response:** `200 OK` (boş body)
 
-**curl example (generating signature in bash):**
 ```bash
-SECRET="my-super-secret"
-BODY='{"tckn":11111111111,"analyzed_data":{"verification_status":true,"verification_score":0.95,"verification_description":"ok"}}'
-TS=$(date +%s)
-SIG=$(printf '%s.%s' "$TS" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
-
-curl -s -o /dev/null -w "%{http_code}" \
-  -X POST http://localhost:8080/api/v1/webhooks/identity-analysis \
+curl -s -X POST http://localhost:8080/api/v1/kimlik_kart_analizi \
   -H "Content-Type: application/json" \
-  -H "X-Timestamp: $TS" \
-  -H "X-Signature: $SIG" \
-  -d "$BODY"
+  -d '{"tckn":11111111111,"analyzed_data":{"verification_status":true,"verification_score":0.95,"verification_description":"ok"}}'
 ```
+
+Validasyon: `tckn` 11 hane, `verification_score` 0.0–1.0
 
 ---
 
-### 3 — Identity Image Upload
+### 3 — Kimlik Fotoğrafı Yükle
 
-#### Front of ID card
+#### Ön yüz
 ```
-POST /api/v1/identity/{tckn}/images/front
+POST /api/v1/kimlik_kart_foto_on?tckn={tckn}
 Content-Type: multipart/form-data
 ```
 
-**curl example:**
 ```bash
-curl -s -X POST "http://localhost:8080/api/v1/identity/11111111111/images/front" \
+curl -s -X POST "http://localhost:8080/api/v1/kimlik_kart_foto_on?tckn=11111111111" \
   -F "file=@/path/to/front.jpg"
 ```
 
-**Response `201 Created`:**
-```json
-{
-  "imageId": "550e8400-e29b-41d4-a716-446655440000",
-  "type": "FRONT"
-}
+#### Arka yüz
 ```
-
-#### Back of ID card
-```
-POST /api/v1/identity/{tckn}/images/back
+POST /api/v1/kimlik_kart_foto_arka?tckn={tckn}
 Content-Type: multipart/form-data
 ```
 
 ```bash
-curl -s -X POST "http://localhost:8080/api/v1/identity/11111111111/images/back" \
+curl -s -X POST "http://localhost:8080/api/v1/kimlik_kart_foto_arka?tckn=11111111111" \
   -F "file=@/path/to/back.jpg"
 ```
 
 **Response `201 Created`:**
 ```json
 {
-  "imageId": "660e8400-e29b-41d4-a716-446655440001",
-  "type": "BACK"
+  "success": true,
+  "tckn": "111******11",
+  "imageId": "550e8400-e29b-41d4-a716-446655440000",
+  "side": "FRONT"
 }
 ```
 
+- Kabul edilen dosya tipleri: `image/jpeg`, `image/jpg`, `image/png`
+- Dosya max boyutu: 10 MB (request: 20 MB)
+- Depolama: `./data/uploads/<tcknHmac>/<uuid>.<ext>`
+- `tckn` response'ta maskelenir; raw TCKN loglanmaz
+
 ---
 
-## Error Response Format
-
-All errors return a consistent JSON envelope:
+## Hata Zarfı
 
 ```json
 {
-  "timestamp": "2026-02-18T10:00:00Z",
-  "path": "/api/v1/webhooks/identity-analysis",
-  "errorCode": "WEBHOOK_SIGNATURE_INVALID",
-  "message": "Signature mismatch",
+  "timestamp": "2026-02-19T10:00:00Z",
+  "path": "/endpoint/kimlik_kart_analizi",
+  "errorCode": "VALIDATION_ERROR",
+  "message": "tckn: tckn must be exactly 11 digits",
   "correlationId": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
 }
 ```
 
----
+## Cross-cutting
 
-## Security Notes
+- `X-Correlation-Id`: her request'e MDC + response header olarak eklenir
+- TCKN loglarda hiçbir zaman raw gösterilmez (`tcknHmac` kullanılır)
 
-- **TCKN is never written to logs** in raw form. All log lines reference `tcknHmac` — a truncated HMAC-SHA256 digest.
-- Webhook requests require a valid HMAC-SHA256 signature with a ≤ 5-minute timestamp window.
-- The `UPS_WEBHOOK_SECRET` environment variable **must** be set in production.
-- Uploaded files are stored under `./data/uploads/<tcknHmac>/<uuid>.<ext>` — no PII in filesystem paths.
-
-## Correlation ID
-
-Every request receives a `X-Correlation-Id` response header. Supply your own via the request header to preserve end-to-end traceability.
-
-## Running Tests
+## Testler
 
 ```bash
 .\mvnw test
 ```
 
-## Health Check
+## Health
 
 ```bash
 curl http://localhost:8080/actuator/health
 ```
+
+

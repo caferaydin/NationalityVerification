@@ -1,8 +1,7 @@
 package com.nationalityverification.infrastructure.storage;
 
 import com.nationalityverification.common.exception.FileStorageException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,16 +12,14 @@ import java.util.UUID;
 
 /**
  * Local filesystem implementation of {@link StoragePort}.
- * Files are stored under {@code ${uploads.baseDir}/<subDirectory>/<uuid>.<ext>}.
+ * Files are stored under {@code ${uploads.baseDir}/\u003csubDirectory\u003e/\u003cuuid\u003e.\u003cext\u003e}.
  *
  * <p>This class is a drop-in adapter; to switch to S3 provide an alternative
  * {@link StoragePort} bean and disable this one via a profile or condition.
  */
+@Slf4j
 @Component
-public class LocalFileStorageAdapter implements StoragePort {
-
-    private static final Logger log = LoggerFactory.getLogger(LocalFileStorageAdapter.class);
-
+public class LocalFileStorageAdapter {
     private final Path baseDir;
 
     public LocalFileStorageAdapter(@Value("${uploads.baseDir:./data/uploads}") String baseDir) {
@@ -35,21 +32,18 @@ public class LocalFileStorageAdapter implements StoragePort {
         }
     }
 
-    @Override
-    public String store(String subDirectory, MultipartFile file) {
+    public String storeAndReturnId(String subDirectory, MultipartFile file) {
         try {
             Path targetDir = baseDir.resolve(subDirectory);
             Files.createDirectories(targetDir);
 
-            String extension = resolveExtension(file.getOriginalFilename());
-            String fileName  = UUID.randomUUID() + extension;
-            Path   targetPath = targetDir.resolve(fileName);
+            String extension  = resolveExtension(file.getOriginalFilename());
+            String imageId    = UUID.randomUUID().toString();
+            Path   targetPath = targetDir.resolve(imageId + extension);
 
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-
-            String relativePath = baseDir.relativize(targetPath).toString();
-            log.debug("Stored file to relative path: {}", relativePath);
-            return relativePath;
+            log.debug("Stored file | imageId={} | path={}", imageId, baseDir.relativize(targetPath));
+            return imageId;
 
         } catch (IOException e) {
             throw new FileStorageException("Failed to store file for directory: " + subDirectory, e);

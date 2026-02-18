@@ -5,8 +5,7 @@ import com.nationalityverification.common.correlation.CorrelationIdFilter;
 import com.nationalityverification.common.exception.NationalityVerificationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +22,9 @@ import java.util.stream.Collectors;
  * Centralised exception-to-response mapping.
  * Produces a consistent {@link ErrorResponse} envelope for all error cases.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
     // ------------------------------------------------------------------ domain exceptions
 
     @ExceptionHandler(NationalityVerificationException.class)

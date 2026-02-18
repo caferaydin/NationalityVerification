@@ -44,4 +44,14 @@ public final class LoggingUtils {
         if (value == null || value.length() <= 4) return "****";
         return value.charAt(0) + "****" + value.charAt(value.length() - 1);
     }
+
+    /**
+     * Returns a display-safe masked TCKN for API responses.
+     * Shows first 3 and last 2 digits; replaces middle 6 with asterisks.
+     * Example: "11111111111" → "111******11"
+     */
+    public static String maskTckn(String tckn) {
+        if (tckn == null || tckn.length() < 5) return "***";
+        return tckn.substring(0, 3) + "******" + tckn.substring(tckn.length() - 2);
+    }
 }
