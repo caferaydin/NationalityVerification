@@ -1,5 +1,7 @@
 package com.nationalityverification.api.controller;
 
+import com.nationalityverification.application.store.VerificationStore;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +18,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Integration tests for the three task alias endpoints.
  *
- * a) POST /endpoint/kimlik_kart_analizi        → 200 OK
- * b) POST /endpoint/kimlik_kart_foto_on        → 201 Created
- * c) POST /endpoint/kimlik_kart_foto_arka      → 201 Created
+ * a) POST /api/v1/kimlik_kart_analizi  → 200 OK
+ * b) POST /api/v1/kimlik_kart_foto_on  → 201 Created
+ * c) POST /api/v1/kimlik_kart_foto_arka → 201 Created
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 class AliasEndpointIntegrationTest {
 
+    private static final String TCKN           = "11111111111";
     private static final String VALID_ANALYSIS_BODY = """
             {
               "tckn": 11111111111,
@@ -37,6 +40,18 @@ class AliasEndpointIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private VerificationStore verificationStore;
+
+    /**
+     * Pre-seed a fresh successful verification so photo-upload tests pass the TTL guard.
+     * The analizi test also covers this path — here we seed directly to keep tests independent.
+     */
+    @BeforeEach
+    void seedVerification() {
+        verificationStore.put(TCKN, true, 0.95);
+    }
 
     @Test
     @DisplayName("a) POST /endpoint/kimlik_kart_analizi → 200 OK")

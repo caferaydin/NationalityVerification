@@ -2,6 +2,12 @@
 
 Spring Boot 3.x / Java 17 PoC — kimlik doğrulama ve fotoğraf yükleme servisi.
 
+## API Dokümantasyonu
+
+[![Postman Docs](https://img.shields.io/badge/Postman-Docs-orange?logo=postman)](https://documenter.getpostman.com/view/52244966/2sBXcDHMtw)
+
+→ **[https://documenter.getpostman.com/view/52244966/2sBXcDHMtw](https://documenter.getpostman.com/view/52244966/2sBXcDHMtw)**
+
 ## Paket Yapısı
 
 ```
@@ -31,6 +37,8 @@ com.nationalityverification
 Port: **8080**
 
 ---
+
+
 
 ## Endpoint'ler
 
