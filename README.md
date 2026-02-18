@@ -37,13 +37,13 @@ Port: **8080**
 ### 1 — QR Kodu
 
 ```
-GET /api/v1/qr?sessionId={sessionId}
+GET /api/v1/qr
 ```
 
-PNG döner, içeriği: `https://demoqr.upsonic.ai/demo/qr/{sessionId}`
+PNG döner, içeriği: `https://demoqr.upsonic.ai/demo/qr/`
 
 ```bash
-curl -o qr.png "http://localhost:8080/api/v1/qr?sessionId=abc-123"
+curl -o qr.png "http://localhost:8080/api/v1/qr"
 ```
 
 ---

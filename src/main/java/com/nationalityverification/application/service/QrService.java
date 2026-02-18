@@ -29,14 +29,13 @@ public class QrService {
         this.qrBaseUrl = qrBaseUrl;
     }
 
-    public byte[] generateQr(String sessionId) {
-        String content = qrBaseUrl + sessionId;
-        log.debug("Generating QR for sessionId=[{}]", sessionId);
+    public byte[] generateQr() {
+        log.debug("Generating QR | url=[{}]", qrBaseUrl);
 
         try {
             QRCodeWriter writer = new QRCodeWriter();
             BitMatrix matrix = writer.encode(
-                content,
+                qrBaseUrl,
                 BarcodeFormat.QR_CODE,
                 QR_SIZE, QR_SIZE,
                 Map.of(EncodeHintType.MARGIN, 1)
@@ -47,7 +46,7 @@ public class QrService {
             return baos.toByteArray();
 
         } catch (Exception e) {
-            log.error("QR generation failed for sessionId=[{}]", sessionId, e);
+            log.error("QR generation failed", e);
             throw new NationalityVerificationException(
                 "QR_GENERATION_ERROR",
                 "Failed to generate QR code: " + e.getMessage(),
